@@ -399,7 +399,7 @@ class Admin:
         new = 0
         total_assigned = 0
         update_db = False
-        users = User.objects(Q(languages=language) & Q(roles='annotator'))
+        users = User.objects(Q(languages=language) & Q(roles__ne='admin'))
         tweets_whole = Tweets.objects(Q(total_assigned__lt=2) & Q(lang=language))
         # print(users)
         # print(tweets_whole)
@@ -726,7 +726,7 @@ class Admin:
             old_removed_tweets = user.removed_tweets
             new_agg_total_assigned = agg_total_assigned - count
             if old_assigned_count == len(old_assigned_tweets):
-                if count < old_assigned_count:
+                if count <= old_assigned_count:
                     # new_assigned_tweets = old_assigned_tweets[count:]
                     tweets_to_remove = old_assigned_tweets[:count]
                     print(tweets_to_remove)
@@ -905,7 +905,7 @@ if __name__ == '__main__':
     # user.change_password("sjmodha_admin@hasoc2020")
     # print(user.verify_password("sjmodha_admin@hasoc2020"))
     admin = Admin()
-    adm
+    admin.distribute_all_unassigned_tweets("en")
     # admin.create_user(
     #     name='Thomas Mandl',
     #     username='thomas_m',
