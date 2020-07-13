@@ -1,0 +1,4 @@
+cron:
+  - description: "Keep instance alive"
+    url: /cron/keepInstanceAlive
+    schedule: every 1 minutes

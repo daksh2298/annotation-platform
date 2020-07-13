@@ -6,7 +6,7 @@ import os
 from project.model.tweetModel import Admin
 from utils.utils import *
 
-PATH = "utils/upload/"
+PATH = "/Users/daksh/Downloads/hindi-upload/"
 
 
 def get_file_size(filename):
@@ -50,5 +50,5 @@ def upload_files(path):
         else:
             print(f"{'*' * 25} File size more than 10 mb {'*' * 25}")
 
-
-upload_files(PATH)
+if __name__=='__main__':
+    upload_files(PATH)

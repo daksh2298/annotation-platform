@@ -97,6 +97,7 @@ def annotate():
     if querySet.count() == 1 and user_update:
         tweet = querySet[0]
         tweet_update = tweet.annotate_tweet(annotation)
+    resolve_conflict(user)
     if tweet_update and user_update:
         print('going to commit!')
         user.commit_db()
@@ -268,3 +269,17 @@ def report():
             result=result
         )
         return resp
+
+@app.route("/cron/keepInstanceAlive")
+def keepAlive():
+    status = True
+    code = 200
+    msg = 'Instance is alive'
+    result = {}
+    resp = createResponse(
+        status_value=status,
+        code=code,
+        message=msg,
+        result=result
+        )
+    return resp

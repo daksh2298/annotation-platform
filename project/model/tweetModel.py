@@ -2,6 +2,8 @@ __author__ = "Daksh Patel"
 
 import datetime
 import json
+import os
+import sys
 import time
 
 from flask_mongoengine import MongoEngine
@@ -11,6 +13,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 from mongoengine import Q
 # from passlib.apps import custom_app_context as pwd_context
 from passlib.hash import sha256_crypt
+from tweepy import OAuthHandler, API
 
 from credentials import creds_english
 from project import app
@@ -23,9 +26,10 @@ ssl._create_default_https_context = ssl._create_unverified_context
 app.config['MONGODB_SETTINGS'] = {
     'db': creds_english['database'],
     'host': f'mongodb+srv://{creds_english["username"]}:{creds_english["password"]}@hasoc-tffh8.mongodb.net/{creds_english["database"]}?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE'
-    }
+}
 
 db = MongoEngine(app)
+
 
 # print(db)
 
@@ -229,6 +233,7 @@ class User(db.Document, UserMixin):
             self.total_annotated += 1
             self.total_assigned -= 1
             # print('User table updated successfully')
+            # resolve_conflict(self)
             return True
         else:
             if tweet_id in self.annotated_tweets:
@@ -249,9 +254,9 @@ class User(db.Document, UserMixin):
                 {
                     'tweet_id': tweet.tweet_id,
                     'text': tweet.text
-                    }
+                }
                 for tweet in tweets
-                ]
+            ]
         return tweets
         # print(json.dumps(tweets, indent=2))
 
@@ -266,9 +271,9 @@ class User(db.Document, UserMixin):
                 {
                     'tweet_id': tweet.tweet_id,
                     'text': tweet.text
-                    }
+                }
                 for tweet in tweets
-                ]
+            ]
         return tweets
 
     def report_tweet(self, tweet_id):
@@ -335,7 +340,7 @@ class User(db.Document, UserMixin):
         assigned_count = assigned_tweets_whole.count()
         return assigned_count
 
-    def change_password(self,new_password):
+    def change_password(self, new_password):
         self.hash_password(new_password)
         self.commit_db()
 
@@ -394,36 +399,51 @@ class ReportedTweets(db.Document):
 
 
 class Admin:
-    def distribute_all_unassigned_tweets(self, language='en'):
+    def distribute_all_unassigned_tweets(self, language='en', count=None, admin=False, restrict=[]):
+        # TODO Double check if user has annotated the tweet of not in tweets table.
+        # print('Make changes in distribution logic!! Check todo')
+        # return 0
         old = 0
         new = 0
         total_assigned = 0
         update_db = False
-        users = User.objects(Q(languages=language) & Q(roles__ne='admin'))
+        if admin:
+            users = User.objects(Q(languages=language))
+        else:
+            users = User.objects(Q(languages=language) & Q(roles__ne='admin'))
+        users = [user for user in users if user.username not in restrict]
         tweets_whole = Tweets.objects(Q(total_assigned__lt=2) & Q(lang=language))
+        if count == None:
+            count = tweets_whole.count()
         # print(users)
         # print(tweets_whole)
+        total_users = len(users)
+        total_tweets = len(tweets_whole[:count]) * 2
+        print(total_tweets)
 
-        total_users = users.count()
-        total_tweets = tweets_whole.count() * 2
-        # print(total_tweets)
-
-        tweets = list(tweets_whole.values_list('tweet_id'))
+        tweets = list(tweets_whole[:count].values_list('tweet_id'))
         tweets += tweets
         tweet_per_user = total_tweets // total_users
-        # print(tweet_per_user)
+        print(tweet_per_user, total_users, total_tweets)
+        print(tweet_per_user)
 
         # print(tweet_per_user, total_users, total_tweets)
         if tweet_per_user < 1:
             tweet_per_user = 1
             total_users = total_tweets
-        # print(users)
+        print(users)
         buffer = int(total_tweets - tweet_per_user * total_users)
-        # print(buffer)
+        print(buffer)
+        # i = 0
+
         for i in range(total_users):
             # print(users[i])
             user = users[i]
-            # print(user)
+            print(user)
+            if user.username in restrict:
+                print('skipping user:', user.username)
+                # i+=1
+                continue
 
             # print('before', user.total_assigned)
             start = i * tweet_per_user
@@ -433,19 +453,23 @@ class Admin:
                 end = end + buffer
 
             assigned_tweets = list(user.assigned_tweets)
+            # annotated_tweets = list(user.annotated_tweets)
             old = len(assigned_tweets)
             # print(f'starting assignment for {user.username}')
             # print(f'old {old}')
             assigned_tweets += tweets[start:end]
             # print(len(tweets[start:end]))
             # print(len(set(tweets[start:end])))
-            if 'hasoc' in assigned_tweets[0]:
-                # print('hereee---------------'+assigned_tweets[0].split('_')[-1])
-                time.sleep(1)
+            # if 'hasoc' in assigned_tweets[0]:
+            #     # print('hereee---------------'+assigned_tweets[0].split('_')[-1])
+            #     time.sleep(1)
+            old_annotated_reported_tweets = list(user.reported_tweets) + list(user.annotated_tweets)
             assigned_tweets = sorted(list(set(assigned_tweets)),
                                      key=lambda x: int(x.split('_')[-1]) if 'hasoc' in x else int(x))
+            assigned_tweets = [tweet_id for tweet_id in assigned_tweets if
+                               tweet_id not in old_annotated_reported_tweets]
             new = len(assigned_tweets)
-            # print(f'new {new}')
+            print(f'new {new}')
             if old < new:
                 update_db = True
 
@@ -460,14 +484,18 @@ class Admin:
                 resp = User.objects(username=user.username).update(set__agg_total_assigned=agg_total_assigned)
                 # print(start, end)
             # print('after', total_assigned)
+            # i += 1
 
         if update_db:
+            print(len(list(set(tweets))))
             if total_users < 2:
-                updated_tweets = tweets_whole.update(set__total_assigned=1)
+                updated_tweets = Tweets.objects(tweet_id__in=list(set(tweets))).update(set__total_assigned=1)
+                # tweets_whole[:count].update(set__total_assigned=1)
             else:
-                updated_tweets = tweets_whole.update(set__total_assigned=2)
+                updated_tweets = Tweets.objects(tweet_id__in=list(set(tweets))).update(set__total_assigned=2)
+                # updated_tweets = tweets_whole[:count].update(set__total_assigned=2)
 
-            print(f'Total tweets assigned {updated_tweets} (one tweet to two user) to {users.count()} users.')
+            print(f'Total tweets assigned {updated_tweets} (one tweet to two user) to {len(users)} users.')
             print('success')
         else:
             print('No changes to make')
@@ -482,14 +510,14 @@ class Admin:
                 'task_1': {
                     'NOT': 0,
                     'HOF': 0
-                    },
+                },
                 'task_2': {
                     'HATE': 0,
                     'OFFN': 0,
                     'PRFN': 0,
                     'NONE': 0
-                    }
                 }
+            }
             final_annotated_tweets = user.fetch_annotated_tweets(lang=lang)
             for tweet in final_annotated_tweets:
                 # print(tweet)
@@ -516,7 +544,7 @@ class Admin:
         users = User.objects(roles='annotator').order_by('active')
         resp = {
             'users': users
-            }
+        }
         return users
 
     @staticmethod
@@ -557,14 +585,14 @@ class Admin:
         agreement = {
             'task_1': agg_task_1,
             'task_2': agg_task_2
-            }
+        }
         resp = {
             'single_annotated': len_single,
             'double_or_more': len_double_more,
             'reported_count': len_all_reported,
             'all_tweets': len_all_tweets,
             'agreement': agreement
-            }
+        }
         # print(resp)
         return resp
 
@@ -627,7 +655,8 @@ class Admin:
             removed_tweets = [tweet['tweet_id'] for tweet in list(user.fetch_removed_tweets(lang=lang))]
             # print(removed_tweets)
             old_assigned_annotated_reported_tweets = list(user.assigned_tweets) + list(user.removed_tweets) + list(
-                user.reported_tweets) + list(user.annotated_tweets)
+                user.reported_tweets) + list(set(list(user.annotated_tweets) + list(
+                Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))))
             # print('old_assigned_a_r_tweets', old_assigned_annotated_reported_tweets)
             old_agg_total_assigned = user.agg_total_assigned
             tweets = Tweets.objects(Q(tweet_id__nin=old_assigned_annotated_reported_tweets) & Q(lang=lang)).order_by(
@@ -811,14 +840,14 @@ def create_dbs(users=10, tweets=100):
         password='daksh2298',
         role=['admin'],
         lang=['en', 'hi', 'de']
-        )
+    )
     admin.create_user(
         name='Sandip Modha',
         username='sjmodha',
         password='sjmodha_admin@hasoc2020',
         role='admin',
         lang=['en', 'hi', 'de']
-        )
+    )
     # twts = []
     # for i in range(tweets):
     #     temp = {}
@@ -843,7 +872,7 @@ def annotate(tweet_id='0', username='user_0'):
         annotated_at=curr_time_utc,
         task_1='HOF',
         task_2='PRFN'
-        )
+    )
     tweet = None
     user = None
     user_update = False
@@ -898,14 +927,276 @@ def add_new_documents(tweets=10):
         tweet.save()
 
 
+def get_twitter_auth():
+    consumer_key = "LvJdi0TlVRS74igPWdasrKaId"
+    consumer_secret = "5NGqFoAEgUBnshE5PxSfUN4EUHBDkxNGooFSJUkEguUIZXC6Zt"
+    access_key = "3192285595-O0A6RgqLSYIBN4MlIec8cxuVBUX8Y7ebFiJGze2"
+    access_secret = "iFuzvAkObOvjdniIFogt0ka6DqNoTYLttS6c2C0bIOg5D"
+
+    auth = OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_key, access_secret)
+    return auth
+
+
+def get_twitter_client():
+    auth = get_twitter_auth()
+    client = API(auth, wait_on_rate_limit=True)
+    return client
+
+
+EXCEPTION_MESSAGE = "EXCEPTION OCCURRED! DELETE TWEET"
+
+
+def full_tweets(client, id_list):
+    directory = './tmp/'
+    fname = open(directory + 'tweets_all.json', 'w')
+    all_tweets = []
+    rt_words_list = []
+    fetchable = 0
+    non_fetchable = 0
+    i = 0
+    for tweet_id in id_list:
+        # print(tweet_id)
+        if i % 1000 == 0:
+            print(f'{i} tweets processed')
+            print(f'Total Fetchable: {fetchable}')
+            print(f'Total Non-Fetchable: {non_fetchable}')
+        try:
+            full_client = client.get_status(id=tweet_id, tweet_mode='extended')
+            full_client = full_client._json
+            if 'retweeted_status' in full_client:
+                rt_words_list = full_client['full_text'].split(' ')[0:2]
+                rt_words = ' '.join(rt_words_list)
+                final_text = '{} {}'.format(rt_words, full_client['retweeted_status']['full_text'])
+                full_client['full_text'] = final_text
+                all_tweets.append(
+                    {
+                        full_client['id_str']: full_client['full_text']
+                    }
+                )
+            else:
+                all_tweets.append(
+                    {
+                        full_client['id_str']: full_client['full_text']
+                    }
+                )
+            fetchable += 1
+        except Exception as e:
+            print(e)
+            all_tweets.append(
+                {
+                    tweet_id: EXCEPTION_MESSAGE
+                }
+            )
+            non_fetchable += 1
+        except KeyboardInterrupt:
+            fname.write(json.dumps(all_tweets, indent=2))
+            fname.close()
+            print(f'{i} tweets processed')
+            print(f'Total Fetchable: {fetchable}')
+            print(f'Total Non-Fetchable: {non_fetchable}')
+            try:
+                sys.exit(0)
+            except SystemExit:
+                os._exit(0)
+        i += 1
+
+    fname.write(json.dumps(all_tweets, indent=2))
+    fname.close()
+    return all_tweets
+
+
+def fetch_incomplete_tweets_db():
+    tweets = Tweets.objects(text__contains="…")
+    tweets = [tweet for tweet in tweets if len(tweet.text) > 135]
+    print(len(tweets))
+    tweet_incomplete = []
+    counts = {}
+    for tweet in tweets:
+        length = len(tweet.text)
+        if length > 135:
+            tweet_incomplete.append(
+                {
+                    'tweet_id': tweet.tweet_id,
+                    'text': tweet.text
+                }
+            )
+        if length in counts:
+            counts[length] += 1
+        else:
+            counts[length] = 1
+    # print(counts)
+    # print(tweet_incomplete)
+    return tweet_incomplete
+
+
+def read_fetched_tweets():
+    file_ptr = open('./tmp/tweets.json')
+    data = json.load(file_ptr)
+    return data
+
+
+def resolve_conflict(user):
+    user_annotated = set(user.annotated_tweets)
+    temp = list(set(list(user.annotated_tweets) + list(
+        Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))))
+    actual_annotated = set(Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))
+    difference_annotated = list(actual_annotated.difference(user_annotated))
+
+    print(actual_annotated.intersection(set(user.assigned_tweets)))
+    print(len(user_annotated.intersection(actual_annotated)),
+          len(actual_annotated.difference(user_annotated)),
+          len(user_annotated.difference(actual_annotated)))
+
+    if len(actual_annotated.difference(user_annotated)):
+        print(f'resolving issue for {user.name}')
+
+        old_total_annotated = user.total_annotated
+        old_total_assigned = user.total_assigned
+        old_agg_total_assigned = user.agg_total_assigned
+        User.objects(username=user.username).update(annotated_tweets=actual_annotated)
+        User.objects(username=user.username).update(inc__total_annotated=len(difference_annotated))
+        User.objects(username=user.username).update(pull_all__assigned_tweets=difference_annotated)
+        User.objects(username=user.username).update(dec__total_assigned=len(difference_annotated))
+        User.objects(username=user.username).update(dec__agg_total_assigned=len(difference_annotated))
+        user_updated = User.objects(username=user.username).first()
+
+        if old_total_annotated + len(difference_annotated) == user_updated.total_annotated:
+            print("Total annotated checked")
+        else:
+            print('Values did not match for total annotated', old_total_annotated + len(difference_annotated),
+                  user_updated.total_annotated)
+
+        if old_total_assigned - len(difference_annotated) == user_updated.total_assigned:
+            print("Total assigned checked")
+        else:
+            print('Values did not match for total assigned', old_total_assigned - len(difference_annotated),
+                  user_updated.total_assigned)
+
+        if old_agg_total_assigned - len(difference_annotated) == user_updated.agg_total_assigned:
+            print("agg_total_assigned checked")
+        else:
+            print('Values did not match for agg total assigned', old_agg_total_assigned - len(difference_annotated),
+                  user_updated.agg_total_assigned)
+
+        user_annotated = set(user_updated.annotated_tweets)
+        print(len(user_annotated.intersection(actual_annotated)),
+              len(actual_annotated.difference(user_annotated)),
+              len(user_annotated.difference(actual_annotated)))
+
+
+
 if __name__ == '__main__':
     # username = 'user_3'
     # create_dbs(users=7, tweets=100)
     # user=User.objects(username="sjmodha").first()
     # user.change_password("sjmodha_admin@hasoc2020")
     # print(user.verify_password("sjmodha_admin@hasoc2020"))
+    # tweets_ids=[tweet_id for tweet_id in Tweets.objects(lang='hi').values_list("tweet_id")[:100]]
+    # print(len(tweets_ids))
     admin = Admin()
-    admin.distribute_all_unassigned_tweets("en")
+    # for user in admin.fetch_all_user():
+    #     print(user.username)
+    #     intersect=set(user.assigned_tweets).intersection(tweets_ids)
+    #     print(intersect)
+    #     User.objects(username=user.username).update(pull_all__assigned_tweets=list(intersect))
+    #     User.objects(username=user.username).update(dec__total_assigned=len(intersect))
+    #     User.objects(username=user.username).update(dec__agg_total_assigned=len(intersect))
+    # for user in admin.fetch_all_user():
+    #     print(user.username)
+    #     print("annotated check",len(user.annotated_tweets)==user.total_annotated)
+    #     print("assigned check",len(user.assigned_tweets)==user.total_assigned)
+    #     print("annotated check",len(user.reported_tweets)==user.total_reported)
+    # if user.assigned_tweets
+    # admin.distribute_all_unassigned_tweets("hi", count=4900, admin=True,
+    #                                        restrict=['sjmodha', 'mohana_dave', 'daksh2298', 'thomas_m'])
+    # client = get_twitter_client()
+    # # tweets_incomplete = fetch_incomplete_tweets_db()
+    # tweet_incomplete = Tweets.objects().all().values_list("tweet_id")
+    # print(tweet_incomplete)
+    #
+    # full_tweets_text = full_tweets(client, tweet_incomplete)
+    # tweets_hi=Tweets.objects(lang='hi')
+    # count=0
+    # for tweet in tweets_hi:
+    #     count+=1
+    #     print(tweet.tweet_id)
+    #     tweet.delete()
+    # print(count)
+
+    # # full_tweets_text = read_fetched_tweets()
+    # # change_track = {True: 0, False: 0}
+    # print(len(full_tweets_text),len(tweets_incomplete))
+    # actual_count=0
+    # exception_count=0
+    # did_not_match_count=0
+    # for i in range(len(full_tweets_text)):
+    #     if full_tweets_text[i]!=EXCEPTION_MESSAGE:
+    #         # print(tweets_incomplete[i]['text'].startswith(tweets_incomplete[:100]))
+    #         # print(full_tweets_text[i].startswith(tweets_incomplete[i]['text'][:100]))
+    #         if full_tweets_text[i].startswith(tweets_incomplete[i]['text'][:50]):
+    #             actual_count+=1
+    #         else:
+    #             print(tweets_incomplete[i]['text'])
+    #             print(full_tweets_text[i])
+    #             print()
+    #             did_not_match_count+=1
+    #     else:
+    #         exception_count+=1
+    # print(actual_count,exception_count,did_not_match_count)
+    #     if tweets_text[i] != full_tweets_text[i]:
+    #         pass
+    # print(change_track)
+    # id_list=["1126811454940823554"]
+    # full_tweets(client,id_list)
+
+    # admin.create_user(
+    #     name='Kanishka Chetia',
+    #     username='kanishka_chetia',
+    #     password='kanishka_chetia',
+    #     lang=['en']
+    #     )
+
+    # #     if 'de' in user.languages and user.username not in ['sjmodha','mohana_dave']:
+    #
+
+    # resolve clashes code till 1129
+    # for user in admin.fetch_all_user():
+    #     print(user.name)
+    #     # print(len(user.assigned_tweets), user.total_assigned)
+    #     # print(len(user.annotated_tweets), user.total_annotated)
+    #     # print(len(user.reported_tweets), user.total_reported)
+    #     # print(user.agg_total_assigned)
+    #     # user=User.objects(username='mohana_dave').first()
+    #     resolve_conflict()
+    # for user in admin.fetch_all_user():
+    #     print(user.username)
+    #     print("annotated check",len(user.annotated_tweets)==user.total_annotated)
+    #     print("assigned check",len(user.assigned_tweets)==user.total_assigned)
+    #     print("annotated check",len(user.reported_tweets)==user.total_reported)
+    # print("annotated list len:",len(user.annotated_tweets))
+    # print("annotated count:",user.total_annotated)
+    #
+    # print("assigned list len:",len(user.assigned_tweets))
+    # print("assigned count:",user.total_assigned)
+    #
+    # print("reported list len:",len(user.reported_tweets))
+    # print("reported count:",user.total_reported)
+
+    #         # tweets_to_remove = list(set(user.assigned_tweets).intersection(set(user.annotated_tweets)))
+    #         # print("conflict", len(tweets_to_remove))
+    #         User.objects(username=user.username).update(assigned_tweets=[])
+    #         user_updated = User.objects(username=user.username).first()
+    #         print(len(user_updated.assigned_tweets))
+    #         User.objects(username=user.username).update(set__total_assigned=len(user_updated.assigned_tweets))
+    #         User.objects(username=user.username).update(set__agg_total_assigned=len(user_updated.assigned_tweets))
+    #         print(user.name)
+    #         print(len(user.assigned_tweets), user.total_assigned)
+    #         print(len(user.annotated_tweets), user.total_annotated)
+    #         print(len(user.reported_tweets), user.total_reported)
+    #         print(user.agg_total_assigned)
+    # Tweets.objects(lang="de").update(set__total_assigned=0)
+
     # admin.create_user(
     #     name='Thomas Mandl',
     #     username='thomas_m',

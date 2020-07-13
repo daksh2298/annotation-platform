@@ -1,0 +1,347 @@
+[
+    {
+        "created_at": "Fri May 10 11:29:20 +0000 2019",
+        "id": 1126811454940823554,
+        "id_str": "1126811454940823554",
+        "full_text": "RT @SussexEnglish: Our @SussexEnglish performance of @BewareCat tonight @AttenboroughCtr is SOLD OUT but you can catch us the other place @TheRSC  on 10th July #bewarethecat https://t.co/0JSdFuhn9f",
+        "truncated": false,
+        "display_text_range": [
+            0,
+            140
+        ],
+        "entities": {
+            "hashtags": [],
+            "symbols": [],
+            "user_mentions": [
+                {
+                    "screen_name": "SussexEnglish",
+                    "name": "School of English",
+                    "id": 21185802,
+                    "id_str": "21185802",
+                    "indices": [
+                        3,
+                        17
+                    ]
+                },
+                {
+                    "screen_name": "SussexEnglish",
+                    "name": "School of English",
+                    "id": 21185802,
+                    "id_str": "21185802",
+                    "indices": [
+                        23,
+                        37
+                    ]
+                },
+                {
+                    "screen_name": "BewareCat",
+                    "name": "Beware the Cat",
+                    "id": 1122903339996516353,
+                    "id_str": "1122903339996516353",
+                    "indices": [
+                        53,
+                        63
+                    ]
+                },
+                {
+                    "screen_name": "AttenboroughCtr",
+                    "name": "Attenborough Centre",
+                    "id": 3070221315,
+                    "id_str": "3070221315",
+                    "indices": [
+                        72,
+                        88
+                    ]
+                }
+            ],
+            "urls": []
+        },
+        "source": "<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>",
+        "in_reply_to_status_id": null,
+        "in_reply_to_status_id_str": null,
+        "in_reply_to_user_id": null,
+        "in_reply_to_user_id_str": null,
+        "in_reply_to_screen_name": null,
+        "user": {
+            "id": 303165484,
+            "id_str": "303165484",
+            "name": "Sarah Naomi Lee",
+            "screen_name": "PositiveHairDay",
+            "location": "Brighton",
+            "description": "writer,researcher,#impact consultant, creative producer, founder #Brighton #BlackHistory #radio maker, Jamaica+Manchester out of Labroke Grove #sheep tickler",
+            "url": null,
+            "entities": {
+                "description": {
+                    "urls": []
+                }
+            },
+            "protected": false,
+            "followers_count": 874,
+            "friends_count": 690,
+            "listed_count": 23,
+            "created_at": "Sun May 22 12:06:08 +0000 2011",
+            "favourites_count": 3468,
+            "utc_offset": null,
+            "time_zone": null,
+            "geo_enabled": true,
+            "verified": false,
+            "statuses_count": 4016,
+            "lang": null,
+            "contributors_enabled": false,
+            "is_translator": false,
+            "is_translation_enabled": false,
+            "profile_background_color": "B2DFDA",
+            "profile_background_image_url": "http://abs.twimg.com/images/themes/theme13/bg.gif",
+            "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme13/bg.gif",
+            "profile_background_tile": true,
+            "profile_image_url": "http://pbs.twimg.com/profile_images/1121423732298407937/Yz8RuUJf_normal.jpg",
+            "profile_image_url_https": "https://pbs.twimg.com/profile_images/1121423732298407937/Yz8RuUJf_normal.jpg",
+            "profile_banner_url": "https://pbs.twimg.com/profile_banners/303165484/1556332890",
+            "profile_link_color": "93A644",
+            "profile_sidebar_border_color": "000000",
+            "profile_sidebar_fill_color": "FFFFFF",
+            "profile_text_color": "333333",
+            "profile_use_background_image": false,
+            "has_extended_profile": false,
+            "default_profile": false,
+            "default_profile_image": false,
+            "following": false,
+            "follow_request_sent": false,
+            "notifications": false,
+            "translator_type": "none"
+        },
+        "geo": null,
+        "coordinates": null,
+        "place": null,
+        "contributors": null,
+        "retweeted_status": {
+            "created_at": "Fri May 10 11:24:57 +0000 2019",
+            "id": 1126810352421830656,
+            "id_str": "1126810352421830656",
+            "full_text": "Our @SussexEnglish performance of @BewareCat tonight @AttenboroughCtr is SOLD OUT but you can catch us the other place @TheRSC  on 10th July #bewarethecat https://t.co/0JSdFuhn9f",
+            "truncated": false,
+            "display_text_range": [
+                0,
+                154
+            ],
+            "entities": {
+                "hashtags": [
+                    {
+                        "text": "bewarethecat",
+                        "indices": [
+                            141,
+                            154
+                        ]
+                    }
+                ],
+                "symbols": [],
+                "user_mentions": [
+                    {
+                        "screen_name": "SussexEnglish",
+                        "name": "School of English",
+                        "id": 21185802,
+                        "id_str": "21185802",
+                        "indices": [
+                            4,
+                            18
+                        ]
+                    },
+                    {
+                        "screen_name": "BewareCat",
+                        "name": "Beware the Cat",
+                        "id": 1122903339996516353,
+                        "id_str": "1122903339996516353",
+                        "indices": [
+                            34,
+                            44
+                        ]
+                    },
+                    {
+                        "screen_name": "AttenboroughCtr",
+                        "name": "Attenborough Centre",
+                        "id": 3070221315,
+                        "id_str": "3070221315",
+                        "indices": [
+                            53,
+                            69
+                        ]
+                    },
+                    {
+                        "screen_name": "TheRSC",
+                        "name": "The RSC",
+                        "id": 14871898,
+                        "id_str": "14871898",
+                        "indices": [
+                            119,
+                            126
+                        ]
+                    }
+                ],
+                "urls": [],
+                "media": [
+                    {
+                        "id": 1126810232695480321,
+                        "id_str": "1126810232695480321",
+                        "indices": [
+                            155,
+                            178
+                        ],
+                        "media_url": "http://pbs.twimg.com/media/D6M778EW4AEu2Dy.jpg",
+                        "media_url_https": "https://pbs.twimg.com/media/D6M778EW4AEu2Dy.jpg",
+                        "url": "https://t.co/0JSdFuhn9f",
+                        "display_url": "pic.twitter.com/0JSdFuhn9f",
+                        "expanded_url": "https://twitter.com/SussexEnglish/status/1126810352421830656/photo/1",
+                        "type": "photo",
+                        "sizes": {
+                            "thumb": {
+                                "w": 150,
+                                "h": 150,
+                                "resize": "crop"
+                            },
+                            "large": {
+                                "w": 1239,
+                                "h": 1752,
+                                "resize": "fit"
+                            },
+                            "medium": {
+                                "w": 849,
+                                "h": 1200,
+                                "resize": "fit"
+                            },
+                            "small": {
+                                "w": 481,
+                                "h": 680,
+                                "resize": "fit"
+                            }
+                        }
+                    }
+                ]
+            },
+            "extended_entities": {
+                "media": [
+                    {
+                        "id": 1126810232695480321,
+                        "id_str": "1126810232695480321",
+                        "indices": [
+                            155,
+                            178
+                        ],
+                        "media_url": "http://pbs.twimg.com/media/D6M778EW4AEu2Dy.jpg",
+                        "media_url_https": "https://pbs.twimg.com/media/D6M778EW4AEu2Dy.jpg",
+                        "url": "https://t.co/0JSdFuhn9f",
+                        "display_url": "pic.twitter.com/0JSdFuhn9f",
+                        "expanded_url": "https://twitter.com/SussexEnglish/status/1126810352421830656/photo/1",
+                        "type": "photo",
+                        "sizes": {
+                            "thumb": {
+                                "w": 150,
+                                "h": 150,
+                                "resize": "crop"
+                            },
+                            "large": {
+                                "w": 1239,
+                                "h": 1752,
+                                "resize": "fit"
+                            },
+                            "medium": {
+                                "w": 849,
+                                "h": 1200,
+                                "resize": "fit"
+                            },
+                            "small": {
+                                "w": 481,
+                                "h": 680,
+                                "resize": "fit"
+                            }
+                        }
+                    }
+                ]
+            },
+            "source": "<a href=\"https://about.twitter.com/products/tweetdeck\" rel=\"nofollow\">TweetDeck</a>",
+            "in_reply_to_status_id": null,
+            "in_reply_to_status_id_str": null,
+            "in_reply_to_user_id": null,
+            "in_reply_to_user_id_str": null,
+            "in_reply_to_screen_name": null,
+            "user": {
+                "id": 21185802,
+                "id_str": "21185802",
+                "name": "School of English",
+                "screen_name": "SussexEnglish",
+                "location": "Falmer",
+                "description": "Events in the School of English and University of Sussex",
+                "url": "http://t.co/yWsnY9NWd0",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "url": "http://t.co/yWsnY9NWd0",
+                                "expanded_url": "http://www.sussex.ac.uk/study/ug",
+                                "display_url": "sussex.ac.uk/study/ug",
+                                "indices": [
+                                    0,
+                                    22
+                                ]
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": []
+                    }
+                },
+                "protected": false,
+                "followers_count": 1675,
+                "friends_count": 750,
+                "listed_count": 36,
+                "created_at": "Wed Feb 18 10:52:25 +0000 2009",
+                "favourites_count": 93,
+                "utc_offset": null,
+                "time_zone": null,
+                "geo_enabled": true,
+                "verified": false,
+                "statuses_count": 2820,
+                "lang": null,
+                "contributors_enabled": false,
+                "is_translator": false,
+                "is_translation_enabled": false,
+                "profile_background_color": "B2DFDA",
+                "profile_background_image_url": "http://abs.twimg.com/images/themes/theme13/bg.gif",
+                "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme13/bg.gif",
+                "profile_background_tile": true,
+                "profile_image_url": "http://pbs.twimg.com/profile_images/1014464252248195072/Hte0t_3X_normal.jpg",
+                "profile_image_url_https": "https://pbs.twimg.com/profile_images/1014464252248195072/Hte0t_3X_normal.jpg",
+                "profile_banner_url": "https://pbs.twimg.com/profile_banners/21185802/1527071763",
+                "profile_link_color": "93A644",
+                "profile_sidebar_border_color": "EEEEEE",
+                "profile_sidebar_fill_color": "FFFFFF",
+                "profile_text_color": "333333",
+                "profile_use_background_image": true,
+                "has_extended_profile": false,
+                "default_profile": false,
+                "default_profile_image": false,
+                "following": false,
+                "follow_request_sent": false,
+                "notifications": false,
+                "translator_type": "none"
+            },
+            "geo": null,
+            "coordinates": null,
+            "place": null,
+            "contributors": null,
+            "is_quote_status": false,
+            "retweet_count": 1,
+            "favorite_count": 3,
+            "favorited": false,
+            "retweeted": false,
+            "possibly_sensitive": false,
+            "possibly_sensitive_appealable": false,
+            "lang": "en"
+        },
+        "is_quote_status": false,
+        "retweet_count": 1,
+        "favorite_count": 0,
+        "favorited": false,
+        "retweeted": false,
+        "lang": "en"
+    }
+]

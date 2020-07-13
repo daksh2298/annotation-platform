@@ -14,7 +14,7 @@ def createResponse(status_value, code, message, result=None):
         'code': code,
         'message': message,
         'result': result,
-        'version': 'v4'
+        'version': 'v5.1'
         }
     # print(json.dumps(resp, indent=2))
     resp = jsonify(resp)
