@@ -5,6 +5,7 @@ from flask import *
 from project import auth
 from project.model.tweetModel import *
 from utils.utils import *
+import logtrail
 
 msg = 'Something went wrong'
 
@@ -75,15 +76,16 @@ def fetch_tweets():
 @auth.login_required
 def annotate():
     user = g.user
-    print(user.name)
     username = user.username
     tweet = None
     user_update = False
     tweet_update = False
+
     task_1 = request.form.get('task_1')
     task_2 = request.form.get('task_2')
     tweet_id = request.form.get('tweet_id')
-    print(task_1, task_2, tweet_id)
+
+    logtrail.Logger.info(f'Annotation attempt by {username} for id: {tweet_id}')
     curr_time_utc = datetime.datetime.utcnow()
     annotation = Annotation(
         annotator=username,

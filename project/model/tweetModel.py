@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import logtrail
 
 from flask_mongoengine import MongoEngine
 from flask_security import UserMixin
@@ -105,6 +106,7 @@ class Tweets(db.Document):
         return conflict
 
     def annotate_tweet(self, annotation):
+        logtrail.Logger.info(f'')
         annotators = [judgement.annotator for judgement in self.judgement]
         if annotation.annotator not in annotators:
             self.judgement.append(annotation)
@@ -1095,6 +1097,9 @@ if __name__ == '__main__':
     # tweets_ids=[tweet_id for tweet_id in Tweets.objects(lang='hi').values_list("tweet_id")[:100]]
     # print(len(tweets_ids))
     admin = Admin()
+    for user in admin.fetch_all_user():
+        print(user.username)
+        resolve_conflict(user)
     # for user in admin.fetch_all_user():
     #     print(user.username)
     #     intersect=set(user.assigned_tweets).intersection(tweets_ids)

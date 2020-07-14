@@ -5,6 +5,7 @@ from flask import *
 from project import auth
 from project.model.tweetModel import *
 from utils.utils import *
+import logtrail
 
 msg = 'Something went wrong'
 
@@ -51,13 +52,13 @@ def login():
     global msg
     username = request.form.get('username')
     password = request.form.get('password')
+    logtrail.Logger.info(f'Sign in attempt by {username}')
     flag = verify_password(
         username_or_token=username,
         password=password
         )
-    print(flag)
+    logtrail.Logger.info(f'Sign in attempt status {flag}')
     if flag:
-        print('inside if')
         user = g.user
         auth_token = user.auth_token
         user_role = user.roles
@@ -69,7 +70,7 @@ def login():
             'auth_token': auth_token,
             'user_role': user_role
             }
-        print(result)
+        logtrail.Logger.info(f'Sign in successful by {username}')
         resp = createResponse(
             status_value=status,
             code=code,
@@ -87,6 +88,7 @@ def login():
             message=msg,
             result=result
             )
+        logtrail.Logger.info(f'Sign in unsuccessful by {username}')
         return resp
 
 
