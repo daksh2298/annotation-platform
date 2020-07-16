@@ -401,7 +401,7 @@ class ReportedTweets(db.Document):
 
 
 class Admin:
-    def distribute_all_unassigned_tweets(self, language='en', count=None, admin=False, restrict=[]):
+    def distribute_all_unassigned_tweets(self, language='en', count=None, admin=False, restrict=[], each_annot=2):
         # TODO Double check if user has annotated the tweet of not in tweets table.
         # print('Make changes in distribution logic!! Check todo')
         # return 0
@@ -412,40 +412,41 @@ class Admin:
         if admin:
             users = User.objects(Q(languages=language))
         else:
-            users = User.objects(Q(languages=language) & Q(roles__ne='admin'))
+            users = User.objects(Q(languages=language) & Q(roles__ne='admin') & Q(username__nin=restrict))
         users = [user for user in users if user.username not in restrict]
-        tweets_whole = Tweets.objects(Q(total_assigned__lt=2) & Q(lang=language))
+        tweets_whole = Tweets.objects(Q(lang=language) & Q(total_annotation__lt=2))
         if count == None:
             count = tweets_whole.count()
         # print(users)
         # print(tweets_whole)
         total_users = len(users)
-        total_tweets = len(tweets_whole[:count]) * 2
+        total_tweets = len(tweets_whole[:count]) * each_annot
         print(total_tweets)
 
         tweets = list(tweets_whole[:count].values_list('tweet_id'))
-        tweets += tweets
+        if each_annot == 2:
+            tweets += tweets
         tweet_per_user = total_tweets // total_users
         print(tweet_per_user, total_users, total_tweets)
-        print(tweet_per_user)
-
-        # print(tweet_per_user, total_users, total_tweets)
-        if tweet_per_user < 1:
-            tweet_per_user = 1
-            total_users = total_tweets
-        print(users)
+        # print(tweet_per_user)
+        #
+        # # print(tweet_per_user, total_users, total_tweets)
+        # if tweet_per_user < 1:
+        #     tweet_per_user = 1
+        #     total_users = total_tweets
+        # print(users)
         buffer = int(total_tweets - tweet_per_user * total_users)
         print(buffer)
-        # i = 0
-
+        # # i = 0
+        #
         for i in range(total_users):
             # print(users[i])
             user = users[i]
             print(user)
-            if user.username in restrict:
-                print('skipping user:', user.username)
-                # i+=1
-                continue
+            # if user.username in restrict:
+            #     print('skipping user:', user.username)
+            #     # i+=1
+            #     continue
 
             # print('before', user.total_assigned)
             start = i * tweet_per_user
@@ -1044,48 +1045,63 @@ def resolve_conflict(user):
         Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))))
     actual_annotated = set(Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))
     difference_annotated = list(actual_annotated.difference(user_annotated))
+    assign_annotate_conflict = list(actual_annotated.intersection(set(user.assigned_tweets)))
 
-    print(actual_annotated.intersection(set(user.assigned_tweets)))
+    print("assign annotated conflict",assign_annotate_conflict)
     print(len(user_annotated.intersection(actual_annotated)),
           len(actual_annotated.difference(user_annotated)),
           len(user_annotated.difference(actual_annotated)))
+
+    # print(len(actual_annotated),len(user_annotated))
+    old_total_annotated = 0
+    old_total_assigned = 0
+    user_updated = None
+    if len(assign_annotate_conflict) and len(difference_annotated) == 0:
+        print('assign annotate conflict')
+        old_total_assigned = user.total_assigned
+        old_total_annotated = user.total_annotated
+        old_agg_total_assigned = user.agg_total_assigned
+        conflict_count = len(actual_annotated.intersection(set(user.assigned_tweets)))
+        User.objects(username=user.username).update(inc__total_annotated=conflict_count)
+        User.objects(username=user.username).update(pull_all__assigned_tweets=assign_annotate_conflict)
+        User.objects(username=user.username).update(dec__total_assigned=len(assign_annotate_conflict))
+        user_updated = User.objects(username=user.username).first()
 
     if len(actual_annotated.difference(user_annotated)):
         print(f'resolving issue for {user.name}')
 
         old_total_annotated = user.total_annotated
         old_total_assigned = user.total_assigned
-        old_agg_total_assigned = user.agg_total_assigned
+        # old_agg_total_assigned = user.agg_total_assigned
         User.objects(username=user.username).update(annotated_tweets=actual_annotated)
         User.objects(username=user.username).update(inc__total_annotated=len(difference_annotated))
         User.objects(username=user.username).update(pull_all__assigned_tweets=difference_annotated)
         User.objects(username=user.username).update(dec__total_assigned=len(difference_annotated))
-        User.objects(username=user.username).update(dec__agg_total_assigned=len(difference_annotated))
+        # User.objects(username=user.username).update(dec__agg_total_assigned=len(difference_annotated))
         user_updated = User.objects(username=user.username).first()
 
-        if old_total_annotated + len(difference_annotated) == user_updated.total_annotated:
-            print("Total annotated checked")
-        else:
-            print('Values did not match for total annotated', old_total_annotated + len(difference_annotated),
-                  user_updated.total_annotated)
+    if user_updated and old_total_annotated + len(difference_annotated) == user_updated.total_annotated:
+        print("Total annotated checked")
+    elif user_updated:
+        print('Values did not match for total annotated', old_total_annotated + len(difference_annotated),
+              user_updated.total_annotated)
 
-        if old_total_assigned - len(difference_annotated) == user_updated.total_assigned:
-            print("Total assigned checked")
-        else:
-            print('Values did not match for total assigned', old_total_assigned - len(difference_annotated),
-                  user_updated.total_assigned)
+    if user_updated and old_total_assigned - len(difference_annotated) == user_updated.total_assigned:
+        print("Total assigned checked")
+    elif user_updated:
+        print('Values did not match for total assigned', old_total_assigned - len(difference_annotated),
+              user_updated.total_assigned)
 
-        if old_agg_total_assigned - len(difference_annotated) == user_updated.agg_total_assigned:
-            print("agg_total_assigned checked")
-        else:
-            print('Values did not match for agg total assigned', old_agg_total_assigned - len(difference_annotated),
-                  user_updated.agg_total_assigned)
+        # if old_agg_total_assigned - len(difference_annotated) == user_updated.agg_total_assigned:
+        #     print("agg_total_assigned checked")
+        # else:
+        #     print('Values did not match for agg total assigned', old_agg_total_assigned - len(difference_annotated),
+        #           user_updated.agg_total_assigned)
 
         user_annotated = set(user_updated.annotated_tweets)
         print(len(user_annotated.intersection(actual_annotated)),
               len(actual_annotated.difference(user_annotated)),
               len(user_annotated.difference(actual_annotated)))
-
 
 
 if __name__ == '__main__':
@@ -1097,13 +1113,48 @@ if __name__ == '__main__':
     # tweets_ids=[tweet_id for tweet_id in Tweets.objects(lang='hi').values_list("tweet_id")[:100]]
     # print(len(tweets_ids))
     admin = Admin()
+    # admin.distribute_all_unassigned_tweets(language="en", admin=False, each_annot=1, restrict=['kanishka_chetia'])
+    # admin.distribute_all_unassigned_tweets(language="hi", admin=False, each_annot=2, count=5000, restrict=['kanishka_chetia'])
+    # tweets=Tweets.objects(Q(lang='en') & Q(total_annotation=1) & Q(total_assigned=1))
+    # print(tweets.count())
+    # tweet_ids=[tweet_id for tweet_id in Tweets.objects().values_list("tweet_id")]
+    # print(tweet_ids[:100])
+    # tweets_id_set=set(tweet_ids)
+    # print(f'Length tweet ids in Database: {len(tweet_ids)}\nLength of set of tweet ids: {len(tweets_id_set)}')
+    # user = User.objects(username="raveena_daswani").first()
+    # print(len(user.assigned_tweets),len(set(user.assigned_tweets),set(user.annotated_tweets)))
+    # print(len(set(user.assigned_tweets).intersection(set(user.annotated_tweets))))
+    # print(set(user.assigned_tweets).difference(set(user.annotated_tweets)))
+    # print(len(user.annotated_tweets),len(set(user.annotated_tweets)))
+
+    # for user in admin.fetch_all_user():
+    # #     if "admin" not in user.roles and 'en' in user.languages:
+    # #         print(user.username)
+    # #         if user.username=='kanishka_chetia':
+    # #             assigned_tweets=user.assigned_tweets
+    # #             print(assigned_tweets)
+    # #             print(user.agg_total_assigned)
+    # #             User.objects(username=user.username).update(set__total_assigned=0)
+    # #             User.objects(username=user.username).update(dec__agg_total_assigned=len(assigned_tweets))
+    # #             User.objects(username=user.username).update(set__assigned_tweets=[])
+    # #             Tweets.objects(tweet_id__in=assigned_tweets).update(dec__total_assigned=1)
+    # # User.objects(username=user.username).update(
+    # #     set__agg_total_assigned=len(set(user.assigned_tweets + user.annotated_tweets + user.reported_tweets)))
+    #     print(user.username)
+    #     print(len(set(user.assigned_tweets).intersection(set(user.annotated_tweets))))
+    #     temp = list(Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))
+    #     print(len(temp)==len(user.annotated_tweets))
+    #     print(user.username)
+    #     resolve_conflict(user)
     for user in admin.fetch_all_user():
         print(user.username)
+        # intersect=set(user.assigned_tweets).intersection(tweets_ids)
+        actual_annotated = set(Tweets.objects(judgement__annotator=user.username).values_list("tweet_id"))
+        print(len(set(user.assigned_tweets).intersection(set(user.annotated_tweets))),
+              len(set(user.annotated_tweets).difference(actual_annotated)),
+              len(set(actual_annotated).difference(user.annotated_tweets)))
         resolve_conflict(user)
-    # for user in admin.fetch_all_user():
-    #     print(user.username)
-    #     intersect=set(user.assigned_tweets).intersection(tweets_ids)
-    #     print(intersect)
+        # print()
     #     User.objects(username=user.username).update(pull_all__assigned_tweets=list(intersect))
     #     User.objects(username=user.username).update(dec__total_assigned=len(intersect))
     #     User.objects(username=user.username).update(dec__agg_total_assigned=len(intersect))

@@ -99,11 +99,11 @@ def annotate():
     if querySet.count() == 1 and user_update:
         tweet = querySet[0]
         tweet_update = tweet.annotate_tweet(annotation)
-    resolve_conflict(user)
     if tweet_update and user_update:
         print('going to commit!')
         user.commit_db()
         tweet.commit_db()
+        resolve_conflict(user)
         status = True
         code = 200
         msg = 'Annotation successful.'
@@ -116,6 +116,7 @@ def annotate():
         )
         return resp
     else:
+        resolve_conflict(user)
         status = False
         code = 400
         msg = 'Something went wrong'
