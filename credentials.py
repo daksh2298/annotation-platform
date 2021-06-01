@@ -1,5 +1,5 @@
 creds_english={
     'username':'hasoc',
     'password':'awgqNCCfNx0NDjeY',
-    'database':'english'
+    'database':'hasoc2021'
 }
