@@ -197,7 +197,7 @@ class User(db.Document, UserMixin):
         # return s.dumps({'id': str(self.id)})
 
     def set_new_auth_token(self):
-        # print('auth changed')
+        print('auth changed')
         s = Serializer(app.config['SECRET_KEY'], expires_in=10000000)
         self.auth_token = s.dumps({'username': self.username}).decode('utf-8')
         self.save()
@@ -210,10 +210,10 @@ class User(db.Document, UserMixin):
             data = s.loads(token)
             # print('data', data)
         except SignatureExpired as e:
-            print(e)
+            print(213,e)
             return None  # valid token, but expired
         except BadSignature as e:
-            print(e)
+            print(216,e)
             return None  # invalid token
         # print(type(ObjectId(data['id'])))
         user = User.objects.get(username=data['username'])

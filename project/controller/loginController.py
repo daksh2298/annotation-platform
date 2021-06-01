@@ -30,6 +30,7 @@ def verify_password(username_or_token, password):
     if not user:
         # try to authenticate with username/password
         user = User.objects(username=username_or_token).first()
+        print(user)
         if not user or not user.verify_password(password):
             msg = 'Incorrect username of password!'
             print(msg)
@@ -52,6 +53,7 @@ def login():
     global msg
     username = request.form.get('username')
     password = request.form.get('password')
+    print(username, password)
     logtrail.Logger.info(f'Sign in attempt by {username}')
     flag = verify_password(
         username_or_token=username,
@@ -60,6 +62,7 @@ def login():
     logtrail.Logger.info(f'Sign in attempt status {flag}')
     if flag:
         user = g.user
+        user.set_new_auth_token()
         auth_token = user.auth_token
         user_role = user.roles
         name = user.name
